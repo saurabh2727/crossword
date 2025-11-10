@@ -1124,9 +1124,11 @@
             showLoading(true);
 
             try {
+                console.log('Starting AI puzzle generation for difficulty:', currentDifficulty);
                 const puzzle = await callGeminiAPI(currentDifficulty);
 
                 if (puzzle) {
+                    console.log('AI puzzle generated successfully:', puzzle);
                     currentPuzzle = puzzle;
                     initializePuzzle();
                     showMessage('🤖 AI puzzle generated successfully!', 'success');
@@ -1135,7 +1137,8 @@
                 }
             } catch (error) {
                 console.error('Error generating puzzle:', error);
-                showMessage('Failed to generate puzzle. Using default puzzle.', 'error');
+                console.error('Error details:', error.message);
+                showMessage(`❌ Failed to generate puzzle: ${error.message}. Using default puzzle.`, 'error');
                 currentPuzzle = puzzles[currentDifficulty];
                 initializePuzzle();
             } finally {
@@ -1187,33 +1190,55 @@ IMPORTANT:
                 }]
             };
 
-            const response = await fetch(GEMINI_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
+            console.log('Calling Gemini API...');
+            console.log('API URL:', GEMINI_API_URL);
 
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status}`);
+            try {
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('API Response status:', response.status);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('API Error Response:', errorData);
+                    throw new Error(`API request failed: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                }
+
+                const data = await response.json();
+                console.log('API Response:', data);
+
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                    throw new Error('Invalid API response structure');
+                }
+
+                const generatedText = data.candidates[0].content.parts[0].text;
+                console.log('Generated text:', generatedText);
+
+                // Extract JSON from the response (remove markdown code blocks if present)
+                let jsonText = generatedText.trim();
+                jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+                console.log('Cleaned JSON text:', jsonText);
+
+                const puzzleData = JSON.parse(jsonText);
+
+                // Validate the puzzle structure
+                if (!puzzleData.size || !puzzleData.grid || !puzzleData.words) {
+                    throw new Error('Invalid puzzle structure');
+                }
+
+                console.log('Puzzle parsed successfully:', puzzleData);
+                return puzzleData;
+            } catch (error) {
+                console.error('Error in callGeminiAPI:', error);
+                throw error;
             }
-
-            const data = await response.json();
-            const generatedText = data.candidates[0].content.parts[0].text;
-
-            // Extract JSON from the response (remove markdown code blocks if present)
-            let jsonText = generatedText.trim();
-            jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-
-            const puzzleData = JSON.parse(jsonText);
-
-            // Validate the puzzle structure
-            if (!puzzleData.size || !puzzleData.grid || !puzzleData.words) {
-                throw new Error('Invalid puzzle structure');
-            }
-
-            return puzzleData;
         }
 
         function showLoading(show) {
