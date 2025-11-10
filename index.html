@@ -1149,38 +1149,21 @@
         async function callGeminiAPI(difficulty) {
             const gridSize = difficulty === 'medium' ? 5 : difficulty === 'high' ? 7 : 9;
 
-            const prompt = `Create a kid-friendly crossword puzzle with the following specifications:
+            const prompt = `Create a simple ${gridSize}x${gridSize} crossword puzzle for kids.
 
-Grid size: ${gridSize}x${gridSize}
-Difficulty: ${difficulty}
-Requirements:
-1. Use simple, child-appropriate words (animals, colors, objects, nature)
-2. Words must INTERSECT correctly (shared letters must match)
-3. Include both ACROSS and DOWN words
-4. Each word needs a simple, fun clue
-5. Grid uses 0 for empty cells and -1 for black cells
+Use ${gridSize === 5 ? '2-3' : gridSize === 7 ? '3-4' : '4-5'} simple words (animals, food, colors). Words must intersect correctly.
 
-Return ONLY valid JSON in this exact format (no markdown, no explanation):
+Return ONLY this JSON format (no markdown):
 {
   "size": ${gridSize},
-  "grid": [[1,0,-1,...], [...], ...],
+  "grid": [[1,0,-1], [0,0,0], ...],
   "words": {
-    "across": [
-      {"number": 1, "answer": "WORD", "clue": "hint", "row": 0, "col": 0}
-    ],
-    "down": [
-      {"number": 2, "answer": "WORD", "clue": "hint", "row": 0, "col": 0}
-    ]
+    "across": [{"number": 1, "answer": "CAT", "clue": "A furry pet", "row": 0, "col": 0}],
+    "down": [{"number": 1, "answer": "CAPE", "clue": "Superhero wears this", "row": 0, "col": 0}]
   }
 }
 
-IMPORTANT:
-- The grid array is ${gridSize} rows x ${gridSize} columns
-- Mark starting positions with numbers (1, 2, 3...)
-- Use -1 for black cells (blocking spaces)
-- Use 0 for cells that are part of words but not starting positions
-- Ensure intersecting words share the same letter at intersection points
-- All words should be appropriate for children ages 6-12`;
+Grid rules: Use numbers (1,2,3...) for word starts, 0 for word cells, -1 for black cells. Grid must be ${gridSize}x${gridSize}. Intersecting words MUST share the same letter.`;
 
             const requestBody = {
                 contents: [{
@@ -1194,14 +1177,20 @@ IMPORTANT:
             console.log('API URL:', GEMINI_API_URL);
 
             try {
+                // Add timeout to prevent hanging forever (30 seconds)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+
                 const response = await fetch(GEMINI_API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify(requestBody),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 console.log('API Response status:', response.status);
 
                 if (!response.ok) {
@@ -1237,6 +1226,12 @@ IMPORTANT:
                 return puzzleData;
             } catch (error) {
                 console.error('Error in callGeminiAPI:', error);
+
+                // Handle timeout specifically
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out after 30 seconds. The AI is taking too long to generate the puzzle.');
+                }
+
                 throw error;
             }
         }
