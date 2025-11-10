@@ -664,7 +664,8 @@
                     <button class="btn btn-reveal" onclick="revealWord()">💡 Reveal Word</button>
                     <button class="btn btn-reveal-all" onclick="revealAll()">🔓 Reveal All</button>
                     <button class="btn btn-reset" onclick="resetPuzzle()">🔄 Reset</button>
-                    <button class="btn btn-generate-ai" onclick="generateAIPuzzle()">🤖 Generate AI Puzzle</button>
+                    <button class="btn btn-new" onclick="nextPuzzle()">➡️ Next Puzzle</button>
+                    <button class="btn btn-generate-ai" onclick="generateAIPuzzle()">🤖 AI Puzzle</button>
                     <button class="btn btn-new" onclick="showDifficultySelection()">🎮 New Game</button>
                 </div>
                 <div class="score-container">
@@ -687,8 +688,9 @@
     </div>
 
     <script>
-        const puzzles = {
-            medium: {
+        const puzzleLibrary = {
+            medium: [
+            {
                 size: 5,
                 grid: [
                     [1, 0, 2, 3, -1],
@@ -709,7 +711,91 @@
                     ]
                 }
             },
-            high: {
+            {
+                size: 5,
+                grid: [
+                    [1, 0, 0, -1, -1],
+                    [0, -1, 2, -1, -1],
+                    [0, -1, 0, 0, 3],
+                    [4, 0, 0, -1, 0],
+                    [-1, -1, -1, -1, 0]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'SUN', clue: 'Bright star in the sky', row: 0, col: 0 },
+                        { number: 4, answer: 'BAG', clue: 'You carry things in this', row: 3, col: 0 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'SUB', clue: 'Short for submarine', row: 0, col: 0 },
+                        { number: 2, answer: 'NAG', clue: 'To complain repeatedly', row: 1, col: 2 },
+                        { number: 3, answer: 'DOG', clue: 'Friendly pet that barks', row: 2, col: 4 }
+                    ]
+                }
+            },
+            {
+                size: 5,
+                grid: [
+                    [1, 2, 0, -1, -1],
+                    [0, 0, 0, -1, -1],
+                    [3, 0, 0, 0, -1],
+                    [-1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'FAN', clue: 'Keeps you cool in summer', row: 0, col: 0 },
+                        { number: 3, answer: 'BEET', clue: 'Red vegetable', row: 2, col: 0 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'FEB', clue: 'Second month of the year', row: 0, col: 0 },
+                        { number: 2, answer: 'ANTS', clue: 'Tiny insects that work hard', row: 0, col: 1 }
+                    ]
+                }
+            },
+            {
+                size: 5,
+                grid: [
+                    [1, 0, 0, 2, -1],
+                    [0, -1, -1, 0, -1],
+                    [3, 0, 0, 0, -1],
+                    [-1, -1, -1, 0, -1],
+                    [-1, -1, -1, 4, 0]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'HAT', clue: 'You wear this on your head', row: 0, col: 0 },
+                        { number: 3, answer: 'HERO', clue: 'Someone brave and helpful', row: 2, col: 0 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'HER', clue: 'Pronoun for a girl', row: 0, col: 0 },
+                        { number: 2, answer: 'TOFU', clue: 'Soft food made from soybeans', row: 0, col: 3 },
+                        { number: 4, answer: 'FUN', clue: 'Having a good time', row: 4, col: 3 }
+                    ]
+                }
+            },
+            {
+                size: 5,
+                grid: [
+                    [1, 0, 0, 0, -1],
+                    [-1, -1, 2, -1, -1],
+                    [3, 0, 0, -1, -1],
+                    [0, -1, 0, -1, -1],
+                    [0, -1, 0, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'CATS', clue: 'Furry pets that purr', row: 0, col: 0 },
+                        { number: 3, answer: 'CAR', clue: 'Vehicle with four wheels', row: 2, col: 0 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'CAC', clue: 'Short for cactus', row: 0, col: 0 },
+                        { number: 2, answer: 'TAR', clue: 'Black sticky substance', row: 1, col: 2 }
+                    ]
+                }
+            }
+            ],
+            high: [
+            {
                 size: 7,
                 grid: [
                     [1, 0, 0, 0, 2, -1, -1],
@@ -731,7 +817,54 @@
                     ]
                 }
             },
-            'very-high': {
+            {
+                size: 7,
+                grid: [
+                    [1, 0, 0, 0, 0, -1, -1],
+                    [0, -1, -1, 2, -1, -1, -1],
+                    [3, 0, 0, 0, 0, -1, -1],
+                    [-1, -1, -1, 0, -1, -1, -1],
+                    [-1, -1, -1, 0, -1, -1, -1],
+                    [-1, -1, -1, 0, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'APPLE', clue: 'Red or green fruit', row: 0, col: 0 },
+                        { number: 3, answer: 'BEACH', clue: 'Sandy place by the ocean', row: 2, col: 0 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'AB', clue: 'Alphabet letters', row: 0, col: 0 },
+                        { number: 2, answer: 'PEACH', clue: 'Sweet fuzzy fruit', row: 1, col: 3 }
+                    ]
+                }
+            },
+            {
+                size: 7,
+                grid: [
+                    [1, 0, 0, 0, 0, -1, -1],
+                    [-1, -1, 2, -1, -1, -1, -1],
+                    [3, 0, 0, 0, -1, -1, -1],
+                    [0, -1, 0, -1, -1, -1, -1],
+                    [4, 0, 0, 0, 0, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'WATER', clue: 'Clear liquid you drink', row: 0, col: 0 },
+                        { number: 3, answer: 'WALL', clue: 'Side of a room or building', row: 2, col: 0 },
+                        { number: 4, answer: 'TIGER', clue: 'Large striped cat', row: 4, col: 0 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'WAT', clue: 'Start of water', row: 0, col: 0 },
+                        { number: 2, answer: 'ALI', clue: 'Famous boxer Muhammad', row: 1, col: 2 }
+                    ]
+                }
+            }
+            ],
+            'very-high': [
+            {
                 size: 9,
                 grid: [
                     [1, 0, 0, 0, 0, 2, -1, -1, -1],
@@ -754,7 +887,33 @@
                         { number: 2, answer: 'STARS', clue: 'Twinkle in the night sky', row: 0, col: 5 }
                     ]
                 }
+            },
+            {
+                size: 9,
+                grid: [
+                    [1, 0, 0, 0, 0, 0, -1, -1, -1],
+                    [0, -1, -1, -1, 2, -1, -1, -1, -1],
+                    [3, 0, 0, 0, 0, 0, 0, -1, -1],
+                    [-1, -1, -1, -1, 0, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, 4, 0, 0, 0, 0],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'GARDEN', clue: 'Place where flowers grow', row: 0, col: 0 },
+                        { number: 3, answer: 'RAINBOW', clue: 'Colorful arc in the sky', row: 2, col: 0 },
+                        { number: 4, answer: 'BREAD', clue: 'Food made from flour', row: 4, col: 4 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'GAR', clue: 'Type of fish', row: 0, col: 0 },
+                        { number: 2, answer: 'BREAD', clue: 'Food made from flour', row: 1, col: 4 }
+                    ]
+                }
             }
+            ]
         };
 
         let currentPuzzle = null;
@@ -771,7 +930,11 @@
 
         function selectDifficulty(difficulty) {
             currentDifficulty = difficulty;
-            currentPuzzle = puzzles[difficulty];
+
+            // Randomly select a puzzle from the available puzzles for this difficulty
+            const availablePuzzles = puzzleLibrary[difficulty];
+            const randomIndex = Math.floor(Math.random() * availablePuzzles.length);
+            currentPuzzle = availablePuzzles[randomIndex];
 
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -789,6 +952,21 @@
             });
             currentPuzzle = null;
             currentDifficulty = null;
+        }
+
+        function nextPuzzle() {
+            if (!currentDifficulty) {
+                showMessage('Please select a difficulty level first!', 'error');
+                return;
+            }
+
+            // Randomly select a new puzzle from the same difficulty
+            const availablePuzzles = puzzleLibrary[currentDifficulty];
+            const randomIndex = Math.floor(Math.random() * availablePuzzles.length);
+            currentPuzzle = availablePuzzles[randomIndex];
+
+            initializePuzzle();
+            showMessage('🎯 New puzzle loaded!', 'success');
         }
 
         function initializePuzzle() {
@@ -1139,7 +1317,12 @@
                 console.error('Error generating puzzle:', error);
                 console.error('Error details:', error.message);
                 showMessage(`❌ Failed to generate puzzle: ${error.message}. Using default puzzle.`, 'error');
-                currentPuzzle = puzzles[currentDifficulty];
+
+                // Randomly select a fallback puzzle
+                const availablePuzzles = puzzleLibrary[currentDifficulty];
+                const randomIndex = Math.floor(Math.random() * availablePuzzles.length);
+                currentPuzzle = availablePuzzles[randomIndex];
+
                 initializePuzzle();
             } finally {
                 showLoading(false);
