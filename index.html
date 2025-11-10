@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Crossword Puzzle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .difficulty-selection {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-btn {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Comic Sans MS', cursive;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .difficulty-btn.medium {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .difficulty-btn.high {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .difficulty-btn.very-high {
+            background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+            color: white;
+        }
+
+        .difficulty-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .difficulty-btn.active {
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 0 8px #667eea;
+        }
+
+        .game-area {
+            display: none;
+        }
+
+        .game-area.active {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .crossword-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .crossword-grid {
+            display: grid;
+            gap: 2px;
+            background: #2d3436;
+            padding: 2px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3436;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            text-transform: uppercase;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+
+        .cell.black {
+            background: #2d3436;
+            cursor: default;
+        }
+
+        .cell:not(.black):hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+
+        .cell.active {
+            background: #bbdefb;
+            border-color: #667eea;
+            border-width: 3px;
+        }
+
+        .cell.correct {
+            background: #c8e6c9;
+            animation: correctPulse 0.5s;
+        }
+
+        .cell.incorrect {
+            background: #ffcdd2;
+            animation: shake 0.5s;
+        }
+
+        .cell-number {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.5em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3436;
+            text-transform: uppercase;
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        .cell input:focus {
+            outline: none;
+        }
+
+        .clues-container {
+            max-width: 400px;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .clues-section {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .clues-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .clue {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid #667eea;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .clue:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+
+        .clue.active {
+            background: #bbdefb;
+            font-weight: bold;
+        }
+
+        .clue-number {
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Comic Sans MS', cursive;
+            color: white;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            white-space: nowrap;
+        }
+
+        .btn-check {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-new {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-reveal {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            color: #2d3436;
+        }
+
+        .btn-reveal-all {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell.revealed {
+            background: #fff9e6;
+            border-color: #fdcb6e;
+            animation: revealPulse 0.5s;
+        }
+
+        @keyframes revealPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); background: #ffeaa7; }
+        }
+
+        .score-container {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            font-size: 1.2em;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .message.error {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.3em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .btn-generate-ai {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            font-size: 1em;
+            padding: 10px 20px;
+        }
+
+        /* Tablet styles */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 20px;
+            }
+
+            .game-area.active {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .clues-container {
+                width: 100%;
+                max-width: 600px;
+            }
+        }
+
+        /* Mobile and small tablet styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+
+            .difficulty-selection {
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .difficulty-btn {
+                padding: 12px 20px;
+                font-size: 1em;
+                flex: 1;
+                min-width: 100px;
+            }
+
+            .game-area.active {
+                gap: 20px;
+            }
+
+            .crossword-grid {
+                padding: 1px;
+                gap: 1px;
+            }
+
+            .cell {
+                width: 35px;
+                height: 35px;
+                font-size: 1.1em;
+                border-width: 1px;
+            }
+
+            .cell.active {
+                border-width: 2px;
+            }
+
+            .cell-number {
+                font-size: 0.45em;
+                top: 1px;
+                left: 2px;
+            }
+
+            .cell input {
+                font-size: 1.1em;
+            }
+
+            .controls {
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+                flex: 1 1 calc(50% - 4px);
+                min-width: 120px;
+            }
+
+            .btn-generate-ai {
+                flex: 1 1 100%;
+            }
+
+            .score-container {
+                padding: 12px;
+                font-size: 1em;
+                margin-top: 15px;
+            }
+
+            .clues-container {
+                width: 100%;
+                max-width: 100%;
+                min-width: auto;
+            }
+
+            .clues-section {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .clues-section h3 {
+                font-size: 1.3em;
+                margin-bottom: 12px;
+            }
+
+            .clue {
+                padding: 8px;
+                font-size: 0.95em;
+                margin-bottom: 8px;
+            }
+
+            .message {
+                font-size: 1em;
+                padding: 12px;
+                margin-top: 15px;
+            }
+
+            .loading-content {
+                padding: 30px 20px;
+                margin: 0 20px;
+            }
+
+            .spinner {
+                width: 50px;
+                height: 50px;
+                border-width: 6px;
+            }
+
+            .loading-text {
+                font-size: 1.1em;
+            }
+        }
+
+        /* Small phone styles */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .difficulty-btn {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+
+            .cell {
+                width: 30px;
+                height: 30px;
+                font-size: 1em;
+            }
+
+            .cell-number {
+                font-size: 0.4em;
+            }
+
+            .cell input {
+                font-size: 1em;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.85em;
+                min-width: 100px;
+            }
+
+            .clues-section h3 {
+                font-size: 1.2em;
+            }
+
+            .clue {
+                font-size: 0.9em;
+                padding: 6px;
+            }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 360px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .cell {
+                width: 26px;
+                height: 26px;
+                font-size: 0.9em;
+            }
+
+            .difficulty-btn {
+                font-size: 0.85em;
+                padding: 8px 12px;
+            }
+
+            .btn {
+                font-size: 0.8em;
+                padding: 7px 10px;
+            }
+        }
+
+        /* Landscape orientation for phones */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 10px;
+            }
+
+            .difficulty-selection {
+                margin-bottom: 15px;
+            }
+
+            .game-area.active {
+                flex-direction: row;
+                gap: 15px;
+            }
+
+            .crossword-container {
+                flex: 0 0 auto;
+            }
+
+            .clues-container {
+                flex: 1;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            .cell {
+                width: 28px;
+                height: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">🤖 AI is creating your puzzle...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>🧩 Crossword Puzzle Game 🧩</h1>
+
+        <div class="difficulty-selection">
+            <button class="difficulty-btn medium" onclick="selectDifficulty('medium')">
+                🌟 Medium
+            </button>
+            <button class="difficulty-btn high" onclick="selectDifficulty('high')">
+                ⭐ High
+            </button>
+            <button class="difficulty-btn very-high" onclick="selectDifficulty('very-high')">
+                🔥 Very High
+            </button>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="crossword-container">
+                <div class="crossword-grid" id="crosswordGrid"></div>
+                <div class="controls">
+                    <button class="btn btn-check" onclick="checkAnswers()">✓ Check Answers</button>
+                    <button class="btn btn-reveal" onclick="revealWord()">💡 Reveal Word</button>
+                    <button class="btn btn-reveal-all" onclick="revealAll()">🔓 Reveal All</button>
+                    <button class="btn btn-reset" onclick="resetPuzzle()">🔄 Reset</button>
+                    <button class="btn btn-generate-ai" onclick="generateAIPuzzle()">🤖 Generate AI Puzzle</button>
+                    <button class="btn btn-new" onclick="showDifficultySelection()">🎮 New Game</button>
+                </div>
+                <div class="score-container">
+                    <div id="score">Correct: 0 / 0</div>
+                </div>
+                <div class="message" id="message"></div>
+            </div>
+
+            <div class="clues-container">
+                <div class="clues-section">
+                    <h3>➡️ Across</h3>
+                    <div id="acrossClues"></div>
+                </div>
+                <div class="clues-section">
+                    <h3>⬇️ Down</h3>
+                    <div id="downClues"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const puzzles = {
+            medium: {
+                size: 5,
+                grid: [
+                    [1, 0, 2, 3, -1],
+                    [0, -1, 0, 0, -1],
+                    [0, -1, 0, 0, -1],
+                    [-1, 4, 0, 0, 0],
+                    [-1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'BATS', clue: 'Flying mammals or sports equipment', row: 0, col: 0 },
+                        { number: 4, answer: 'PIGS', clue: 'Farm animals that oink', row: 3, col: 1 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'BIG', clue: 'Not small, very large', row: 0, col: 0 },
+                        { number: 2, answer: 'TAXI', clue: 'A car you pay to ride in', row: 0, col: 2 },
+                        { number: 3, answer: 'STAG', clue: 'A male deer', row: 0, col: 3 }
+                    ]
+                }
+            },
+            high: {
+                size: 7,
+                grid: [
+                    [1, 0, 0, 0, 2, -1, -1],
+                    [0, -1, -1, -1, 0, -1, -1],
+                    [0, -1, -1, -1, 0, -1, -1],
+                    [0, -1, -1, -1, 0, -1, -1],
+                    [0, -1, 3, 0, 0, 0, -1],
+                    [-1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'BOOKS', clue: 'Things you read for stories', row: 0, col: 0 },
+                        { number: 3, answer: 'PLAY', clue: 'Have fun or act in a show', row: 4, col: 2 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'BIRDS', clue: 'Animals with wings that fly', row: 0, col: 0 },
+                        { number: 2, answer: 'STAR', clue: 'Shines bright in the night sky', row: 0, col: 4 }
+                    ]
+                }
+            },
+            'very-high': {
+                size: 9,
+                grid: [
+                    [1, 0, 0, 0, 0, 2, -1, -1, -1],
+                    [0, -1, -1, -1, -1, 0, -1, -1, -1],
+                    [0, -1, -1, -1, -1, 0, -1, -1, -1],
+                    [0, -1, -1, -1, -1, 0, -1, -1, -1],
+                    [0, -1, 3, 0, 0, 0, 0, -1, -1],
+                    [0, -1, -1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+                    [-1, -1, -1, -1, -1, -1, -1, -1, -1]
+                ],
+                words: {
+                    across: [
+                        { number: 1, answer: 'TIGERS', clue: 'Large striped wild cats', row: 0, col: 0 },
+                        { number: 3, answer: 'BIRDS', clue: 'Animals with feathers that fly', row: 4, col: 2 }
+                    ],
+                    down: [
+                        { number: 1, answer: 'TURTLE', clue: 'Slow reptile with a shell', row: 0, col: 0 },
+                        { number: 2, answer: 'STARS', clue: 'Twinkle in the night sky', row: 0, col: 5 }
+                    ]
+                }
+            }
+        };
+
+        let currentPuzzle = null;
+        let currentDifficulty = null;
+        let activeCell = null;
+        let userAnswers = {};
+        let currentActiveWord = null;
+        let currentActiveDirection = null;
+
+        // Google Gemini API Configuration
+        // WARNING: Keep this API key private! Do not share this file publicly
+        const GEMINI_API_KEY = 'AIzaSyBXHX72EVls_vyLj1TQi5QrXsmk2Mwgpik';
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+
+        function selectDifficulty(difficulty) {
+            currentDifficulty = difficulty;
+            currentPuzzle = puzzles[difficulty];
+
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            document.getElementById('gameArea').classList.add('active');
+            initializePuzzle();
+        }
+
+        function showDifficultySelection() {
+            document.getElementById('gameArea').classList.remove('active');
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            currentPuzzle = null;
+            currentDifficulty = null;
+        }
+
+        function initializePuzzle() {
+            const grid = document.getElementById('crosswordGrid');
+            const size = currentPuzzle.size;
+
+            grid.style.gridTemplateColumns = `repeat(${size}, 50px)`;
+            grid.innerHTML = '';
+            userAnswers = {};
+
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    const cellValue = currentPuzzle.grid[row][col];
+
+                    if (cellValue === -1) {
+                        cell.classList.add('black');
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 1;
+                        input.dataset.row = row;
+                        input.dataset.col = col;
+
+                        input.addEventListener('input', handleInput);
+                        input.addEventListener('keydown', handleKeyDown);
+                        input.addEventListener('focus', () => setActiveCell(cell));
+
+                        if (cellValue > 0) {
+                            const number = document.createElement('span');
+                            number.className = 'cell-number';
+                            number.textContent = cellValue;
+                            cell.appendChild(number);
+                        }
+
+                        cell.appendChild(input);
+                    }
+
+                    grid.appendChild(cell);
+                }
+            }
+
+            renderClues();
+            updateScore();
+            hideMessage();
+        }
+
+        function setActiveCell(cell) {
+            if (activeCell) {
+                activeCell.classList.remove('active');
+            }
+            activeCell = cell;
+            cell.classList.add('active');
+        }
+
+        function handleInput(e) {
+            const input = e.target;
+            const row = parseInt(input.dataset.row);
+            const col = parseInt(input.dataset.col);
+
+            input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+
+            userAnswers[`${row}-${col}`] = input.value;
+
+            if (input.value && col < currentPuzzle.size - 1) {
+                const nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
+                if (nextInput) {
+                    nextInput.focus();
+                }
+            }
+        }
+
+        function handleKeyDown(e) {
+            const input = e.target;
+            const row = parseInt(input.dataset.row);
+            const col = parseInt(input.dataset.col);
+
+            if (e.key === 'Backspace' && !input.value && col > 0) {
+                const prevInput = document.querySelector(`input[data-row="${row}"][data-col="${col - 1}"]`);
+                if (prevInput) {
+                    prevInput.focus();
+                }
+            } else if (e.key === 'ArrowRight' && col < currentPuzzle.size - 1) {
+                const nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col + 1}"]`);
+                if (nextInput) nextInput.focus();
+            } else if (e.key === 'ArrowLeft' && col > 0) {
+                const prevInput = document.querySelector(`input[data-row="${row}"][data-col="${col - 1}"]`);
+                if (prevInput) prevInput.focus();
+            } else if (e.key === 'ArrowDown' && row < currentPuzzle.size - 1) {
+                const downInput = document.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
+                if (downInput) downInput.focus();
+            } else if (e.key === 'ArrowUp' && row > 0) {
+                const upInput = document.querySelector(`input[data-row="${row - 1}"][data-col="${col}"]`);
+                if (upInput) upInput.focus();
+            }
+        }
+
+        function renderClues() {
+            const acrossClues = document.getElementById('acrossClues');
+            const downClues = document.getElementById('downClues');
+
+            acrossClues.innerHTML = '';
+            downClues.innerHTML = '';
+
+            currentPuzzle.words.across.forEach(word => {
+                const clueDiv = document.createElement('div');
+                clueDiv.className = 'clue';
+                clueDiv.innerHTML = `<span class="clue-number">${word.number}.</span>${word.clue}`;
+                clueDiv.onclick = () => focusWord(word, 'across');
+                acrossClues.appendChild(clueDiv);
+            });
+
+            currentPuzzle.words.down.forEach(word => {
+                const clueDiv = document.createElement('div');
+                clueDiv.className = 'clue';
+                clueDiv.innerHTML = `<span class="clue-number">${word.number}.</span>${word.clue}`;
+                clueDiv.onclick = () => focusWord(word, 'down');
+                downClues.appendChild(clueDiv);
+            });
+        }
+
+        function focusWord(word, direction) {
+            const input = document.querySelector(`input[data-row="${word.row}"][data-col="${word.col}"]`);
+            if (input) {
+                input.focus();
+            }
+
+            currentActiveWord = word;
+            currentActiveDirection = direction;
+
+            document.querySelectorAll('.clue').forEach(clue => clue.classList.remove('active'));
+            event.target.closest('.clue').classList.add('active');
+        }
+
+        function checkAnswers() {
+            let correctCount = 0;
+            let totalCells = 0;
+
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('correct', 'incorrect');
+            });
+
+            const allWords = [...currentPuzzle.words.across, ...currentPuzzle.words.down];
+
+            allWords.forEach(word => {
+                const isAcross = currentPuzzle.words.across.includes(word);
+
+                for (let i = 0; i < word.answer.length; i++) {
+                    const row = word.row;
+                    const col = isAcross ? word.col + i : word.col;
+                    const actualRow = isAcross ? row : row + i;
+
+                    const userAnswer = userAnswers[`${actualRow}-${col}`] || '';
+                    const correctAnswer = word.answer[i];
+
+                    totalCells++;
+
+                    const input = document.querySelector(`input[data-row="${actualRow}"][data-col="${col}"]`);
+                    if (input) {
+                        const cell = input.parentElement;
+
+                        if (userAnswer === correctAnswer) {
+                            cell.classList.add('correct');
+                            correctCount++;
+                        } else if (userAnswer) {
+                            cell.classList.add('incorrect');
+                        }
+                    }
+                }
+            });
+
+            updateScore(correctCount, totalCells);
+
+            if (correctCount === totalCells) {
+                showMessage('🎉 Congratulations! You solved the puzzle! 🎉', 'success');
+            } else {
+                showMessage(`Keep trying! ${correctCount} out of ${totalCells} correct.`, 'error');
+            }
+        }
+
+        function updateScore(correct = 0, total = 0) {
+            if (total === 0) {
+                const allWords = [...currentPuzzle.words.across, ...currentPuzzle.words.down];
+                total = allWords.reduce((sum, word) => sum + word.answer.length, 0);
+                total = new Set(
+                    allWords.flatMap(word => {
+                        const isAcross = currentPuzzle.words.across.includes(word);
+                        return Array.from({length: word.answer.length}, (_, i) => {
+                            const row = isAcross ? word.row : word.row + i;
+                            const col = isAcross ? word.col + i : word.col;
+                            return `${row}-${col}`;
+                        });
+                    })
+                ).size;
+            }
+
+            document.getElementById('score').textContent = `Correct: ${correct} / ${total}`;
+        }
+
+        function resetPuzzle() {
+            document.querySelectorAll('input').forEach(input => {
+                input.value = '';
+            });
+
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('correct', 'incorrect');
+            });
+
+            userAnswers = {};
+            updateScore();
+            hideMessage();
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message show ${type}`;
+        }
+
+        function hideMessage() {
+            const message = document.getElementById('message');
+            message.classList.remove('show');
+        }
+
+        function revealWord() {
+            if (!activeCell) {
+                showMessage('Please click on a cell or clue first!', 'error');
+                return;
+            }
+
+            const row = parseInt(activeCell.dataset.row);
+            const col = parseInt(activeCell.dataset.col);
+
+            // Find which word contains this cell
+            let wordToReveal = null;
+            let directionToReveal = null;
+
+            const allWords = [...currentPuzzle.words.across, ...currentPuzzle.words.down];
+
+            for (const word of allWords) {
+                const isAcross = currentPuzzle.words.across.includes(word);
+
+                for (let i = 0; i < word.answer.length; i++) {
+                    const wordRow = isAcross ? word.row : word.row + i;
+                    const wordCol = isAcross ? word.col + i : word.col;
+
+                    if (wordRow === row && wordCol === col) {
+                        wordToReveal = word;
+                        directionToReveal = isAcross ? 'across' : 'down';
+                        break;
+                    }
+                }
+                if (wordToReveal) break;
+            }
+
+            if (!wordToReveal) return;
+
+            // Reveal the word
+            const isAcross = directionToReveal === 'across';
+            for (let i = 0; i < wordToReveal.answer.length; i++) {
+                const targetRow = isAcross ? wordToReveal.row : wordToReveal.row + i;
+                const targetCol = isAcross ? wordToReveal.col + i : wordToReveal.col;
+
+                const input = document.querySelector(`input[data-row="${targetRow}"][data-col="${targetCol}"]`);
+                if (input) {
+                    input.value = wordToReveal.answer[i];
+                    userAnswers[`${targetRow}-${targetCol}`] = wordToReveal.answer[i];
+                    input.parentElement.classList.add('revealed');
+
+                    // Remove revealed class after animation
+                    setTimeout(() => {
+                        input.parentElement.classList.remove('revealed');
+                    }, 500);
+                }
+            }
+
+            showMessage(`💡 Revealed: ${wordToReveal.answer}`, 'success');
+        }
+
+        function revealAll() {
+            const allWords = [...currentPuzzle.words.across, ...currentPuzzle.words.down];
+
+            // Calculate total unique cells
+            const totalCells = new Set(
+                allWords.flatMap(word => {
+                    const isAcross = currentPuzzle.words.across.includes(word);
+                    return Array.from({length: word.answer.length}, (_, i) => {
+                        const row = isAcross ? word.row : word.row + i;
+                        const col = isAcross ? word.col + i : word.col;
+                        return `${row}-${col}`;
+                    });
+                })
+            ).size;
+
+            allWords.forEach(word => {
+                const isAcross = currentPuzzle.words.across.includes(word);
+
+                for (let i = 0; i < word.answer.length; i++) {
+                    const row = isAcross ? word.row : word.row + i;
+                    const col = isAcross ? word.col + i : word.col;
+
+                    const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+                    if (input) {
+                        input.value = word.answer[i];
+                        userAnswers[`${row}-${col}`] = word.answer[i];
+                        input.parentElement.classList.add('revealed');
+                    }
+                }
+            });
+
+            // Remove revealed class after animation
+            setTimeout(() => {
+                document.querySelectorAll('.cell.revealed').forEach(cell => {
+                    cell.classList.remove('revealed');
+                    cell.classList.add('correct');
+                });
+            }, 500);
+
+            showMessage('🔓 All answers revealed! 🎉', 'success');
+            updateScore(totalCells, totalCells);
+        }
+
+        async function generateAIPuzzle() {
+            if (!currentDifficulty) {
+                showMessage('Please select a difficulty level first!', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const puzzle = await callGeminiAPI(currentDifficulty);
+
+                if (puzzle) {
+                    currentPuzzle = puzzle;
+                    initializePuzzle();
+                    showMessage('🤖 AI puzzle generated successfully!', 'success');
+                } else {
+                    throw new Error('Failed to parse puzzle data');
+                }
+            } catch (error) {
+                console.error('Error generating puzzle:', error);
+                showMessage('Failed to generate puzzle. Using default puzzle.', 'error');
+                currentPuzzle = puzzles[currentDifficulty];
+                initializePuzzle();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function callGeminiAPI(difficulty) {
+            const gridSize = difficulty === 'medium' ? 5 : difficulty === 'high' ? 7 : 9;
+
+            const prompt = `Create a kid-friendly crossword puzzle with the following specifications:
+
+Grid size: ${gridSize}x${gridSize}
+Difficulty: ${difficulty}
+Requirements:
+1. Use simple, child-appropriate words (animals, colors, objects, nature)
+2. Words must INTERSECT correctly (shared letters must match)
+3. Include both ACROSS and DOWN words
+4. Each word needs a simple, fun clue
+5. Grid uses 0 for empty cells and -1 for black cells
+
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{
+  "size": ${gridSize},
+  "grid": [[1,0,-1,...], [...], ...],
+  "words": {
+    "across": [
+      {"number": 1, "answer": "WORD", "clue": "hint", "row": 0, "col": 0}
+    ],
+    "down": [
+      {"number": 2, "answer": "WORD", "clue": "hint", "row": 0, "col": 0}
+    ]
+  }
+}
+
+IMPORTANT:
+- The grid array is ${gridSize} rows x ${gridSize} columns
+- Mark starting positions with numbers (1, 2, 3...)
+- Use -1 for black cells (blocking spaces)
+- Use 0 for cells that are part of words but not starting positions
+- Ensure intersecting words share the same letter at intersection points
+- All words should be appropriate for children ages 6-12`;
+
+            const requestBody = {
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }]
+            };
+
+            const response = await fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const generatedText = data.candidates[0].content.parts[0].text;
+
+            // Extract JSON from the response (remove markdown code blocks if present)
+            let jsonText = generatedText.trim();
+            jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+            const puzzleData = JSON.parse(jsonText);
+
+            // Validate the puzzle structure
+            if (!puzzleData.size || !puzzleData.grid || !puzzleData.words) {
+                throw new Error('Invalid puzzle structure');
+            }
+
+            return puzzleData;
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.add('show');
+            } else {
+                overlay.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>
