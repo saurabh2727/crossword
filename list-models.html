@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Available Gemini Models</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .error {
+            border-left-color: #f44336 !important;
+            background: #ffebee !important;
+            color: #c62828;
+        }
+        .success {
+            border-left-color: #4CAF50 !important;
+            background: #e8f5e9 !important;
+            color: #2e7d32;
+        }
+        .loading {
+            border-left-color: #ff9800 !important;
+            background: #fff3e0 !important;
+            color: #e65100;
+        }
+        .model-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .model-name {
+            font-weight: bold;
+            color: #1976D2;
+            font-size: 16px;
+        }
+        .model-info {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 List Available Gemini Models</h1>
+        <p>This will show all models available for your API key.</p>
+
+        <button onclick="listModels()">🔍 List All Models</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyBXHX72EVls_vyLj1TQi5QrXsmk2Mwgpik';
+
+        function log(message, type = '') {
+            const output = document.getElementById('output');
+            if (type) {
+                output.className = type;
+            }
+            output.innerHTML += message + '\n';
+        }
+
+        function clearLog() {
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('output').className = '';
+        }
+
+        async function listModels() {
+            clearLog();
+            log('🔍 Fetching available models...', 'loading');
+            log('');
+
+            try {
+                // Try v1 API
+                const urlV1 = `https://generativelanguage.googleapis.com/v1/models?key=${API_KEY}`;
+                log('Trying v1 API: ' + urlV1);
+                log('');
+
+                const response = await fetch(urlV1);
+
+                log('Response Status: ' + response.status);
+                log('');
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log('❌ FAILED TO LIST MODELS', 'error');
+                    log('');
+                    log('Error Response:');
+                    log(errorText);
+
+                    // Try v1beta
+                    log('');
+                    log('Trying v1beta API...');
+                    const urlV1Beta = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`;
+                    const responseV1Beta = await fetch(urlV1Beta);
+
+                    if (!responseV1Beta.ok) {
+                        const errorTextBeta = await responseV1Beta.text();
+                        log('❌ v1beta also failed', 'error');
+                        log(errorTextBeta);
+                        return;
+                    }
+
+                    const dataBeta = await responseV1Beta.json();
+                    displayModels(dataBeta, 'v1beta');
+                    return;
+                }
+
+                const data = await response.json();
+                displayModels(data, 'v1');
+
+            } catch (error) {
+                log('❌ ERROR OCCURRED!', 'error');
+                log('');
+                log('Error: ' + error.message);
+                log('');
+                log('Full Error: ' + error.toString());
+            }
+        }
+
+        function displayModels(data, apiVersion) {
+            clearLog();
+            log('✅ SUCCESSFULLY RETRIEVED MODELS!', 'success');
+            log('');
+            log('API Version: ' + apiVersion);
+            log('');
+            log('═══════════════════════════════════════════════════');
+            log('');
+
+            if (data.models && data.models.length > 0) {
+                log(`Found ${data.models.length} models:`);
+                log('');
+
+                let generateContentModels = [];
+
+                data.models.forEach((model, index) => {
+                    const modelCard = `
+<div class="model-card">
+    <div class="model-name">📦 ${model.name}</div>
+    <div class="model-info">
+        Display Name: ${model.displayName || 'N/A'}<br>
+        Description: ${model.description || 'N/A'}<br>
+        Supported Methods: ${model.supportedGenerationMethods ? model.supportedGenerationMethods.join(', ') : 'N/A'}<br>
+        Input Token Limit: ${model.inputTokenLimit || 'N/A'}<br>
+        Output Token Limit: ${model.outputTokenLimit || 'N/A'}
+    </div>
+</div>`;
+
+                    document.getElementById('output').innerHTML += modelCard;
+
+                    // Check if it supports generateContent
+                    if (model.supportedGenerationMethods &&
+                        model.supportedGenerationMethods.includes('generateContent')) {
+                        generateContentModels.push(model.name);
+                    }
+                });
+
+                log('');
+                log('═══════════════════════════════════════════════════');
+                log('');
+                log('🎯 MODELS THAT SUPPORT generateContent:');
+                log('');
+
+                if (generateContentModels.length > 0) {
+                    generateContentModels.forEach(modelName => {
+                        log('✅ ' + modelName);
+                    });
+
+                    log('');
+                    log('═══════════════════════════════════════════════════');
+                    log('');
+                    log('💡 RECOMMENDED FOR YOUR CROSSWORD GAME:');
+                    log('');
+                    log('Use this model name: ' + generateContentModels[0]);
+                    log('');
+                    log('Full API URL should be:');
+                    const recommendedUrl = `https://generativelanguage.googleapis.com/${apiVersion}/${generateContentModels[0]}:generateContent?key=YOUR_API_KEY`;
+                    log(recommendedUrl);
+                } else {
+                    log('❌ No models found that support generateContent!', 'error');
+                }
+
+            } else {
+                log('❌ No models found in response!', 'error');
+            }
+        }
+
+        // Auto-run on page load
+        window.addEventListener('load', () => {
+            setTimeout(listModels, 500);
+        });
+    </script>
+</body>
+</html>
